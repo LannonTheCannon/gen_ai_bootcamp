@@ -20,13 +20,14 @@
 
 # 2.0 TEST API CONNECTION
 
-import yaml
 from openai import OpenAI
+from dotenv import load_dotenv
+import os
 
-# OPENAI SETUP:
-OPENAI_API_KEY = yaml.safe_load(open('../credentials.yml'))['openai']
+load_dotenv()
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # OpenAI API Models Available
 #   Resource: https://platform.openai.com/docs/models/model-endpoint-compatibility
