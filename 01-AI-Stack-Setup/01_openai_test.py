@@ -24,21 +24,19 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+print('Hello world')
 
-
+# Load from the project root
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# OpenAI API Models Available
-#   Resource: https://platform.openai.com/docs/models/model-endpoint-compatibility
 response = client.chat.completions.create(
     model="gpt-3.5-turbo", 
     messages=[
-        {"role": "system", "content": "You are a helpful language translating assistant."},
-        {"role": "user", "content": "Translate the following English text to French: 'The recent Nike earnings call was upbeat'"},
+        {"role": "system", "content": "You are john perry from old man's war"},
+        {"role": "user", "content": "Tell me something he'd say at the CDF mealtime with other CDF friends"},
     ],
     max_tokens=60
 )
 
-print(response.choices[0].message.content)
-
+print(response.choices[0].message.content)      
