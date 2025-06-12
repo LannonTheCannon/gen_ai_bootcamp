@@ -1,0 +1,8 @@
+pytubefix
+youtube-transcript-api
+google-api-python-client
+chromadb
+langchain
+langchain-chroma
+langchain-community
+langgraph

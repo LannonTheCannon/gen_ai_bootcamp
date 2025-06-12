@@ -1,0 +1,50 @@
+# BUSINESS SCIENCE UNIVERSITY
+# PYTHON FOR GENERATIVE AI COURSE
+# PYTHON AI SOFTWARE STACK INSTALLATION (DEVELOPMENT VERSION)
+# * NOTE - THIS INSTALLS LATEST VERSIONS OF LIBRARIES
+# ***
+
+# Conda Environment Setup Instructions ----
+#  - Using an environment.yml file with conda
+#  - Important Terminal Commands:
+#    conda env create -f environment.yml
+#    conda env update -f environment.yml 
+#    conda env export -n ds4b_301p_dev > envname.yml
+#    conda env remove -n ds4b_301p_dev
+#    conda env list
+
+name: ds4b_301p_dev
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - matplotlib
+  - seaborn
+  - plotly
+  - scikit-learn
+  - xgboost
+  - jupyterlab
+  - sqlalchemy
+  - pip
+  - pip:
+      - pytimetk
+      - openai
+      - langchain
+      - langchain_openai
+      - langchain_ollama
+      - langchain-experimental
+      - langchain-community
+      - langgraph
+      - streamlit
+      - pypdf
+      - google-api-python-client 
+      - pytube
+      - youtube-transcript-api
+      - PyYAML
+      - chromadb
+      - watchdog
+      - quarto # Make sure to download quarto CLI at https://quarto.org/docs/get-started/
+
+     
