@@ -24,7 +24,7 @@ from pprint import pprint
 from IPython.display import Markdown
 
 # Key Parameters
-RAG_DATABASE    = "Week2/data/chroma_3.db"
+RAG_DATABASE    = "data/chroma_4.db"
 EMBEDDING_MODEL = "text-embedding-3-large"
 LLM             = "gpt-4o-mini"
 
