@@ -1,0 +1,158 @@
+version: 2
+
+dialect: sqlite
+
+models:
+  - name: leads_scored_h20
+    description: "Table that contains leads gathered from mailchimp with a scoring of how likely they are to purchase."
+    columns:
+      - name: mailchimp_id
+        description: "Primary key for the table"
+        type: unique_id
+        sensitive: false
+
+      - name: user_full_name
+        description: "Full Name of the user."
+        type: dimension
+        sensitive: true
+
+      - name: user_email
+        description: "Email of the user."
+        type: dimension
+        sensitive: false
+
+      - name: member_rating
+        description: "Rating of the member."
+        type: dimension
+        sensitive: false
+
+      - name: optin_time
+        description: "Timestamp of when the customer opted in."
+        type: dimension
+        is_time: true
+        sensitive: false
+
+      - name: optin_days
+        description: "Number of days from now to the past they opted in"
+        type: dimension
+        sensitive: false
+
+      - name: country_code
+        description: "Country code of the user if we have it."
+        type: dimension
+        sensitive: false
+
+      - name: made_purchase
+        description: "Flag indicating if the customer made a purchase."
+        type: dimension
+        sensitive: false
+
+      - name: email_provided
+        description: "Email provider for the customer"
+        type: dimension
+        sensitive: false
+
+
+      - name: p1
+        description: "The probability the customer will make a purchase."
+        type: metric
+        sensitive: false
+      
+  - name: products
+    description: "Table that contains all the products."
+    columns:
+      - name: product_id
+        description: "Primary key for the table"
+        type: unique_id
+        sensitive: false
+
+      - name: description
+        description: "Description of the product."
+        type: dimension
+        sensitive: false
+
+      - name: suggested_price
+        description: "Price of the product."
+        type: metric
+        aggregations: [sum, avg, max, min]
+        meanings: [price, revenue, cost]
+        sensitive: false
+
+
+
+  - name: transactions
+    description: "Table that contains all the transactions."
+    columns:
+      - name: transaction_id
+        description: "Primary key for the table"
+        type: unique_id
+        sensitive: false
+      
+      - name: purchased_at
+        description: "Date the product was purchased"
+        type: dimension
+        is_type: true
+        sensitive: false
+      
+      - name: user_full_name
+        description: "Full Name of the user."
+        type: dimension
+        sensitive: true
+
+      - name: user_email
+        description: "Email of the user."
+        type: dimension
+        sensitive: false
+
+      - name: charge_country
+        description: "Country code where the purchase was made from."
+        type: dimension
+        sensitive: false
+      
+      - name: product_id
+        description: "id of the product"
+        type: unique_id
+        sensitive: false
+
+      
+relationships:
+  - source_table: leads_scored_h2o
+    source_column: user_email
+    target_table: transactions
+    target_column: user_email
+
+  - source_table: products
+    source_column: product_id
+    target_table: transcations
+    target_column: product_id
+  
+
+
+examples:
+  - user_request: "Which 5 customers have the highest p1 probability of purchase but have not purchased yet?"
+    sql: |
+      SELECT 
+      user_email
+      ,p1 
+      
+      FROM leads_scored 
+
+      WHERE made_purchase = 0
+      ORDER BY p1 DESC 
+      LIMIT 5;
+
+  
+
+rules:
+  - "ONLY use tables, columns, and relationships defined in the schema."
+  - "Join tables only according to relationships."
+  - "Field marked as metrics can be used for calculations like SUM, AVG, COUNT, MIN, MAX on fields marked as metrics."
+  - "Fields marked as dimensions can be Grouped by and CANNOT be aggregated"
+  - "Use WHERE filters appropriately; default to last 12 months if no time range is given."
+  - "NEVER hallucinate table names or column names."
+  - "JOIN tables only using explicitly defined relationships."
+  - "Write clean, readable SQL with short helpful comments."
+  - "Do not select sensitive columns if marked."
+  - "Do not produce any SQL that has UPDATE, INSERT or UPDATE."
+  - "Be aware that the max purchase date is 12-31-2020. So dont use references to now when asked a question. Use max purchase date."
+  
