@@ -27,6 +27,10 @@ import h2o
 from h2o.automl import H2OAutoML
 
 
+# To check where my current working directory is! 
+import os
+print("Current working directory:", os.getcwd())
+
 
 # 1.0 INSPECT THE DATABASE
 # - Goal: Predictive Lead Scoring
@@ -51,7 +55,6 @@ pd.read_sql_table('leads_scored', conn).glimpse()
 leads_df = pd.read_sql_table('leads', conn)
 products_df = pd.read_sql_table('products', conn)
 transactions_df = pd.read_sql_table('transactions', conn)
-
 # Drop unnecessary columns
 df = leads_df.drop(columns=['mailchimp_id', 'made_purchase', 'user_full_name'])
 
@@ -59,7 +62,6 @@ df = leads_df.drop(columns=['mailchimp_id', 'made_purchase', 'user_full_name'])
 target = transactions_df['user_email'].unique()
 df['purchased'] = df['user_email'].isin(target).astype(int)
 
-df
 
 # 3.0 SET UP H2O AUTOML
 
@@ -72,6 +74,10 @@ hf = h2o.H2OFrame(df)
 hf['purchased'] = hf['purchased'].asfactor()
 
 hf.describe()
+
+
+
+
 
 # Set the predictor names and the response column name
 predictors = [
@@ -109,7 +115,7 @@ h2o.save_model(
 )
 
 # Load the production model
-best_model_h2o = h2o.load_model("models/best_model_h2o")
+best_model_h2o = h2o.load_model("models/best_model_h2o_XGBoost_1_AutoML_2_20250620_111813")
 
 # Explain
 best_model_h2o.explain(hf)
