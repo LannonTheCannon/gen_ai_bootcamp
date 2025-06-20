@@ -1,0 +1,7 @@
+langchain
+langgraph
+h2o
+sqlalchemy
+plotly
+ai-data-science-team
+
