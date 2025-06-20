@@ -25,6 +25,7 @@ from IPython.display import Markdown
 
 # Key Parameters
 RAG_DATABASE    = "data/chroma_4.db"
+
 EMBEDDING_MODEL = "text-embedding-3-large"
 LLM             = "gpt-4o-mini"
 
