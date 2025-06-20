@@ -23,6 +23,8 @@
 import streamlit as st
 import sys 
 
+from youtube_transcript_api import YouTubeTranscriptApi
+
 st.write("Python executable:", sys.executable)
 
 from langchain_pytubefix import YoutubeLoaderFix
@@ -39,6 +41,7 @@ from googleapiclient.discovery import build
 # 2.0 YOUTUBE API KEY SETUP 
 
 PATH_CREDENTIALS = '../credentials.yml'
+
 os.environ['YOUTUBE_API_KEY'] = yaml.safe_load(open(PATH_CREDENTIALS))['youtube'] 
 
 # 3.0 VIDEO TRANSCRIPT SCRAPING FUNCTIONS
