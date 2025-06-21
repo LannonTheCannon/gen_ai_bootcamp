@@ -22,10 +22,12 @@ import sqlalchemy as sql
 import plotly.io as pio
 
 from business_intelligence_agent import make_business_intelligence_agent
+from langgraph.graph import END, StateGraph
+
 
 # AI SETUP
 
-os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('../credentials.yml'))['openai']
+os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('credentials.yml'))['openai']
 
 MODEL_LIST = ['gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1', 'gpt-4o-mini', 'gpt-4o']
 

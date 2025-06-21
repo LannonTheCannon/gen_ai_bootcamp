@@ -19,9 +19,15 @@ import re
 from pprint import pprint
 from IPython.display import Markdown
 
+# To check where my current working directory is! 
+import os
+print("Current working directory:", os.getcwd())
+
+
+
 # AI SETUP
 
-os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('../credentials.yml'))['openai']
+os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('credentials.yml'))['openai']
 
 OPENAI_LLM = "gpt-4o-mini" # gpt-4.1-mini, gpt-4.1-nano, gpt-4.1
 
@@ -131,7 +137,6 @@ pd.read_sql(extract_sql_code(response), conn)
 
 
 # Which countries have the most purchases?
-
 response = chain.invoke({'question': "Which countries have the most purchases?"})
 
 
