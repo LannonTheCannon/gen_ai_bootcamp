@@ -22,7 +22,7 @@ from pprint import pprint
 
 # * MAKE THE AGENT
 
-os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('../credentials.yml'))['openai']
+os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('credentials.yml'))['openai']
 
 PATH_DB = "sqlite:///database/leads_scored.db"
 MODEL = "gpt-4.1-mini"
@@ -50,7 +50,7 @@ pd.DataFrame(response["data"])
 
 # Data Visualization Question
 
-response = bi_agent.invoke({"user_question": "What are the total sales by month-year? Use suggested price as a proxy for revenue for each transaction and a quantity of 1. Make a chart of sales over time. Make the line red in the chart"})
+response = bi_agent.invoke({"user_question": "What are the total sales by month-year? Use suggested price as a proxy for revenue for each transaction and a quantity of 1. Make a chart of sales over time. Make the line green in the chart"})
 
 
 response.keys()
