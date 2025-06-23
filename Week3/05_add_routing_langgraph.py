@@ -25,6 +25,7 @@ from typing import TypedDict
 
 import os
 import yaml
+
 from pprint import pprint
 
 import pandas as pd
@@ -35,7 +36,7 @@ from business_intelligence_agent.utils import extract_sql_code
 
 # AI SETUP
 
-os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('../credentials.yml'))['openai']
+os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('credentials.yml'))['openai']
 
 OPENAI_LLM = ChatOpenAI(
     model = "gpt-4o-mini"

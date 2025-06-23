@@ -17,7 +17,7 @@
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 
-# * New: Custom Output Parsers
+# * New: Custom Output Parsers``
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from langchain_core.output_parsers import BaseOutputParser
 
@@ -47,10 +47,10 @@ from business_intelligence_agent.utils import extract_sql_code
 
 # AI SETUP
 
-os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('../credentials.yml'))['openai']
+os.environ["OPENAI_API_KEY"] = yaml.safe_load(open('credentials.yml'))['openai']
 
 OPENAI_LLM = ChatOpenAI(
-    model = "gpt-4o-mini"
+    model = "gpt-4o"
 )
 
 llm = OPENAI_LLM

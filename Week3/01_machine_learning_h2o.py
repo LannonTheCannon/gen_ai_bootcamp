@@ -19,7 +19,7 @@
 # 2. Perform Predictive Lead Scoring
 # 3. Upload the lead scores into a SQL database that the AI will have access to 
 
-# Libraries
+# 1.0 Imports and Setups ---------------------------------------------------------------------------------
 import pandas as pd
 import pytimetk as tk
 import sqlalchemy as sql
@@ -32,11 +32,12 @@ import os
 print("Current working directory:", os.getcwd())
 
 
-# 1.0 INSPECT THE DATABASE
+# 2.0 Connects to the Database ---------------------------------------------------------------------------------
+
+# Inspect the Database 
 # - Goal: Predictive Lead Scoring
 
 # Connect to the database
-
 sql_engine = sql.create_engine("sqlite:///database/leads_scored.db")
 conn = sql_engine.connect()
 
@@ -45,16 +46,18 @@ metadata = sql.MetaData()
 metadata.reflect(bind=sql_engine)
 list(metadata.tables.keys())
 
-# Goal: Predictive Lead Scoring
+# Goal: Predictive Lead Scoring (Check whats in the database)
 pd.read_sql_table('leads_scored', conn).glimpse()
 
 
-# 2.0 PREPARE THE DATA FOR LEAD SCORING
+# 3.0 Prepares Data for Machine Learning  ---------------------------------------------------------------------------------
+# PREPARE THE DATA FOR LEAD SCORING
 
 # Read the tables
 leads_df = pd.read_sql_table('leads', conn)
 products_df = pd.read_sql_table('products', conn)
 transactions_df = pd.read_sql_table('transactions', conn)
+
 # Drop unnecessary columns
 df = leads_df.drop(columns=['mailchimp_id', 'made_purchase', 'user_full_name'])
 
@@ -62,8 +65,8 @@ df = leads_df.drop(columns=['mailchimp_id', 'made_purchase', 'user_full_name'])
 target = transactions_df['user_email'].unique()
 df['purchased'] = df['user_email'].isin(target).astype(int)
 
-
-# 3.0 SET UP H2O AUTOML
+# 4.0 Sets up H2O AutoML ---------------------------------------------------------------------------------
+# SET UP H2O AUTOML
 
 # Initialize the H2O cluster
 h2o.init()
@@ -75,9 +78,7 @@ hf['purchased'] = hf['purchased'].asfactor()
 
 hf.describe()
 
-
-
-
+# 5.0 Defines Predictors and Targets  ---------------------------------------------------------------------------------
 
 # Set the predictor names and the response column name
 predictors = [
@@ -89,8 +90,7 @@ predictors = [
 ]
 response = "purchased"
 
-# 4.0 USE H2O AUTOML TO FIND THE BEST MODEL
-
+# 6.0 Train the H2O AutoML Model ---------------------------------------------------------------------------------
 # Train an H2O AutoML model
 # - Note: Set max_runtime_secs = 60 * 10 to run for 10 minutes in production
 
@@ -106,6 +106,7 @@ automl.train(x=predictors, y=response, training_frame=hf)
 lb = automl.leaderboard
 print(lb)
 
+# 7.0 Save the Best Model and Make Predictions ---------------------------------------------------------------------------------
 # Save the best model
 h2o.save_model(
     automl.leader, 
@@ -117,9 +118,12 @@ h2o.save_model(
 # Load the production model
 best_model_h2o = h2o.load_model("models/best_model_h2o_XGBoost_1_AutoML_2_20250620_111813")
 
+# 8.0 Make Predictions and Explain the Model ---------------------------------------------------------------------------------
 # Explain
 best_model_h2o.explain(hf)
 
+
+# 9.0 Make Predictions and Update the SQL Database ---------------------------------------------------------------------------------
 # Update the SQL Database with the predictions
 predictions_df = best_model_h2o.predict(hf).as_data_frame()
 
@@ -127,6 +131,9 @@ predictions_df = best_model_h2o.predict(hf).as_data_frame()
 pd.concat([leads_df, predictions_df], axis=1) \
     .to_sql('leads_scored_h2o', con = conn, if_exists='replace', index=False) 
 
+
+# 10.0 Summary and clean up ---------------------------------------------------------------------------------
 # Clean up: Close the connection to the database and shutdown H2O
 conn.close()
 h2o.shutdown(prompt=False)
+
