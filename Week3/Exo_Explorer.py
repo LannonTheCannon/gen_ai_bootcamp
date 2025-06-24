@@ -1,177 +1,206 @@
-import streamlit as st 
+import streamlit as st
 import pandas as pd
-import pytimetk as tk
 import sqlalchemy as sql
 import h2o
 from h2o.automl import H2OAutoML
+import os
 from cleaning_agent.agent import make_data_cleaning_agent
 from langchain_openai import ChatOpenAI
-import os
+from collections import Counter
 
-# === Streamlit Setup ===
-st.set_page_config(page_title="Exo_Explorer", layout="wide")
-st.title("Explore NASA Exoplanets Dataset")
-st.markdown("Use ML to **predict habitability scores** of all the known exoplanets in the dataset!")
+st.set_page_config(page_title="Exo Explorer", layout="wide")
+st.title("Exo Explorer: Predict Exoplanet Habitability")
 
-# === 1.0 Load Raw Data ===
-print("Current working directory:", os.getcwd())
-exo_df = pd.read_csv("dataset/nasa_exoplanets.csv") 
+# === Load and Clean Data ===
+exo_df = pd.read_csv("dataset/nasa_exoplanets.csv")
 
-st.subheader('Raw Exoplanets Data')
+st.subheader("Raw Dataset Preview")
 st.write(exo_df.head())
 
-st.subheader('Raw Exoplanets Data Description')
-st.write(exo_df.describe())
+with st.expander("📖 Column Reference Guide (click to expand)"):
+    st.markdown("""
+    Here’s what each of the dataset’s columns mean:
 
-# === 2.0 Session State Initialization ===
-st.session_state.setdefault('exo_df_cleaned', None)
-st.session_state.setdefault('cleaning_code', None)
-st.session_state.setdefault('sql_engine', None)
-st.session_state.setdefault('conn', None)
+    **Planet & Host Info**
+    - `pl_name`: Planet Name  
+    - `hostname`: Host Star Name  
+    - `default_flag`: Default Parameter Set  
+    - `sy_snum`: Number of Stars in System  
+    - `sy_pnum`: Number of Planets in System  
 
-# === 3.0 Data Cleaning ===
-st.subheader('1. Begin Data Cleaning')
-if st.button('Clean the Data'):
-    st.write("Cleaning the data...")
-    llm = ChatOpenAI(model='gpt-4.1')
-    data_cleaning_agent = make_data_cleaning_agent(llm)
-    cleaned_response = data_cleaning_agent.invoke({
-        "user_instructions": None,
-        "data_raw": exo_df.to_dict(),
-        "max_retries": 3,
-        "retry_count": 0
-    })
-    st.session_state.exo_df_cleaned = pd.DataFrame.from_dict(cleaned_response['data_cleaned'])
-    st.session_state.cleaning_code = cleaned_response.get("data_cleaner_function", "No code returned.")
-    st.success("Data cleaned successfully!")
+    **Discovery & Classification**
+    - `discoverymethod`: Discovery Method  
+    - `disc_year`: Discovery Year  
+    - `disc_facility`: Discovery Facility  
+    - `soltype`: Solution Type  
+    - `pl_controv_flag`: Controversial Flag  
+    - `pl_refname`: Parameter Reference  
 
-if st.session_state.exo_df_cleaned is not None:
-    tab1, tab2 = st.tabs(["Cleaned Data Preview", "Cleaning Code"])
-    with tab1:
-        st.subheader('Cleaned Exoplanets Data')
-        st.write(st.session_state.exo_df_cleaned.head())
-    with tab2:
-        st.subheader('Generated Cleaning Code')
-        st.code(st.session_state.cleaning_code, language="python")
+    **Orbital Parameters**
+    - `pl_orbper`: Orbital Period [days]  
+    - `pl_orbsmax`: Semi-Major Axis (Average Orbit Distance) [AU]  
+    - `pl_orbeccen`: Orbital Eccentricity  
 
-# === 4.0 Save Cleaned Data to SQL ===
-st.subheader('2. Save Cleaned Data to SQL Database')
-if st.button('Save Cleaned Data to SQL Database'):
-    engine = sql.create_engine("sqlite:///database/exoplanets_v4.db") 
-    conn = engine.connect()
-    st.session_state.exo_df_cleaned.to_sql('exoplanets', con=engine, if_exists='replace', index=False)
-    st.session_state.sql_engine = engine
-    st.session_state.conn = conn
-    st.success("Cleaned data saved to SQL database!")
+    **Planet Physical Characteristics**
+    - `pl_rade`: Radius [Earth radii]  
+    - `pl_radj`: Radius [Jupiter radii]  
+    - `pl_bmasse`: Mass [Earth masses]  
+    - `pl_bmassj`: Mass [Jupiter masses]  
+    - `pl_eqt`: Equilibrium Temperature [K]  
+    - `pl_insol`: Insolation (Stellar Energy Flux) [Earth flux]  
 
-    metadata = sql.MetaData()
-    metadata.reflect(bind=engine)
-    st.write("Tables in the database:", list(metadata.tables.keys()))
-    st.subheader('Cleaned Data from SQL')
-    st.write(pd.read_sql_table('exoplanets', conn).head())
+    **Host Star Properties**
+    - `st_teff`: Effective Temperature [K]  
+    - `st_rad`: Radius [Solar radii]  
+    - `st_mass`: Mass [Solar masses]  
+    - `st_met`: Metallicity [dex]  
+    - `st_logg`: Surface Gravity [log10(cm/s²)]  
+    - `st_spectype`: Spectral Type  
 
-# === 5.0 Prepare Data for ML ===
-st.subheader('3. Prepare Data for Machine Learning')
-if st.button('Prepare Data for ML'):
-    conn = st.session_state.get('conn')
-    if conn is None:
-        st.error("Please save the cleaned data to the SQL database first.")
-        st.stop()
+    **Position & Distance**
+    - `ra`, `dec`: Right Ascension / Declination [deg]  
+    - `sy_dist`: Distance from Earth [parsecs]  
 
-    drop_cols = [
-        'hostname', 'pl_refname', 'st_refname', 'sy_refname', 'pl_bmassprov',
-        'discoverymethod', 'disc_year', 'disc_facility', 'rowupdate', 'pl_pubdate', 'releasedate',
-        'default_flag', 'pl_controv_flag', 'ttv_flag',
-        'pl_orbperlim', 'pl_orbsmaxlim', 'pl_radelim', 'pl_radjlim',
-        'pl_bmasselim', 'pl_bmassjlim', 'pl_orbeccenlim', 'pl_insollim', 'pl_eqtlim',
-        'rastr', 'ra', 'decstr', 'dec'
-    ]
-    df = pd.read_sql_table('exoplanets', conn)
-    exo_df_cleaned = df.drop(columns=[col for col in drop_cols if col in df.columns])
-    st.session_state.exo_df_cleaned = exo_df_cleaned
-    st.write("Data prepared for ML:")
-    st.write(exo_df_cleaned.head())
+    **Magnitudes**
+    - `sy_vmag`: Visual Magnitude  
+    - `sy_kmag`: Infrared Magnitude (Ks Band)  
+    - `sy_gaiamag`: Gaia Magnitude  
 
-# === 6.0 Initialize H2O AutoML ===
-st.subheader('4. Set up H2O AutoML')
-if st.button('Initialize H2O AutoML'):
+    **Timestamps & References**
+    - `rowupdate`, `pl_pubdate`, `releasedate`: Update & Publication Dates  
+    - `st_refname`, `sy_refname`: Reference Names  
+
+    _(Note: Uncertainty/error/limit columns have been omitted for clarity.)_
+    """)
+
+llm = ChatOpenAI(model='gpt-4.1')
+data_cleaning_agent = make_data_cleaning_agent(llm)
+
+# if st.button("Run Data Cleaning"):
+#     with st.spinner("Cleaning the dataset..."):
+#         cleaned_response = data_cleaning_agent.invoke({
+#             "user_instructions": None,
+#             "data_raw": exo_df.to_dict(),
+#             "max_retries": 3,
+#             "retry_count": 0
+#         })
+#         exo_df = pd.DataFrame.from_dict(cleaned_response['data_cleaned'])
+#         st.success("Data cleaned successfully!")
+
+# === Drop unnecessary columns ===
+drop_cols = [
+    'hostname', 'pl_refname', 'st_refname', 'sy_refname', 'pl_bmassprov',
+    'discoverymethod', 'disc_year', 'disc_facility', 'rowupdate', 'pl_pubdate', 'releasedate',
+    'default_flag', 'pl_controv_flag', 'ttv_flag',
+    'pl_orbperlim', 'pl_orbsmaxlim', 'pl_radelim', 'pl_radjlim',
+    'pl_bmasselim', 'pl_bmassjlim', 'pl_orbeccenlim', 'pl_insollim', 'pl_eqtlim',
+    'rastr', 'ra', 'decstr', 'dec'
+]
+drop_cols += [col for col in exo_df.columns if col.endswith(('err1', 'err2', 'lim'))]
+exo_df = exo_df.drop(columns=[col for col in drop_cols if col in exo_df.columns])
+
+# === Define habitability ===
+def label_habitable(row):
+    try:
+        return int(
+            (row.get('pl_rade', 99) <= 5) and
+            (150 <= row.get('pl_eqt', -1) <= 500) and
+            (3500 <= row.get('st_teff', -1) <= 8000)
+        )
+    except:
+        return 0
+
+exo_df['habitable'] = exo_df.apply(label_habitable, axis=1)
+
+# === Check label distribution ===
+label_counts = Counter(exo_df['habitable'])
+st.write("Label distribution:", label_counts)
+
+if len(label_counts) < 2:
+    st.warning("Only one class found in 'habitable'. Forcing one example to be habitable.")
+    exo_df.loc[0, 'habitable'] = 1
+
+# === Save to SQL ===
+engine = sql.create_engine("sqlite:///database/exoplanets_v4.db")
+conn = engine.connect()
+exo_df.to_sql('exoplanets', con=engine, if_exists='replace', index=False)
+
+# === Train Model ===
+st.subheader("Train H2O AutoML Model")
+
+if st.button("Start Training"):
     h2o.init()
-    hf = h2o.H2OFrame(st.session_state.exo_df_cleaned)
+    hf = h2o.H2OFrame(exo_df)
     hf['habitable'] = hf['habitable'].asfactor()
-    st.session_state.hf = hf
 
-    st.write("H2O Frame initialized.")
-    st.write(hf.describe())
-
-    possible_predictors = [
-        'pl_rade', 'pl_orbper', 'pl_bmassj', 'pl_eqt', 'st_mass', 'st_teff',
-        'pl_orbsmax', 'pl_bmasse', 'st_rad', 'st_met', 'st_logg', 'sy_dist',
-        'sy_vmag', 'sy_kmag', 'sy_gaiamag', 'sy_snum', 'sy_pnum', 'soltype'
+    predictors = [
+        col for col in [
+            'sy_snum', 'sy_pnum', 'soltype', 'pl_orbper', 'pl_rade', 'pl_radj',
+            'st_teff', 'st_rad', 'st_mass', 'st_met', 'st_logg',
+            'sy_dist', 'sy_vmag', 'sy_kmag', 'sy_gaiamag',
+            'st_metratio'  # <- only include if it exists
+        ] if col in exo_df.columns
     ]
-    predictors = [col for col in possible_predictors if col in st.session_state.exo_df_cleaned.columns]
     response = "habitable"
-    if response in predictors:
-        predictors.remove(response)
 
-    st.session_state.predictors = predictors
-    st.session_state.response = response
-
-    st.write("Predictors:", predictors)
-    st.write("Response:", response)
-
-# === 7.0 Train H2O Model ===
-st.subheader('5. Train the H2O AutoML Model')
-if st.button('Train H2O AutoML Model'):
-    automl = H2OAutoML(max_models=20, seed=1, max_runtime_secs=100)
-    automl.train(
-        x=st.session_state.predictors, 
-        y=st.session_state.response, 
-        training_frame=st.session_state.hf
+    automl = H2OAutoML(
+        max_runtime_secs=60,
+        max_models=5,
+        seed=42,
+        balance_classes=True
     )
-    st.session_state.automl = automl
+    automl.train(x=predictors, y=response, training_frame=hf)
+    lb = automl.leaderboard
+    st.write("AutoML Leaderboard", lb.as_data_frame())
+
     best_model = automl.leader
-    st.session_state.best_model = best_model
-    h2o.save_model(model=best_model, path="models/best_exoplanet_model", force=True)
+    st.success("Model trained and leaderboard displayed.")
 
-    st.write("Model trained!")
-    st.subheader('AutoML Leaderboard')
-    st.write(automl.leaderboard)
-    st.success("Best model saved!")
+    model_path = h2o.save_model(best_model, path="models", force=True)
+    st.write(f"Best model saved to: {model_path}")
 
-# === 8.0 Explain the Model ===
-st.subheader('6. Explain the Model')
-if st.button('Explain the Best Model'):
-    best_model = h2o.load_model("models/best_exoplanet_model")
-    hf_explain = st.session_state.hf.drop('pl_name') if 'pl_name' in st.session_state.hf.columns else st.session_state.hf
-    explanation = best_model.explain(hf_explain)
-    st.write("Model explanation:")
-    st.write(explanation)
+    predictions_df = best_model.predict(hf).as_data_frame()
 
-# === 9.0 Make Predictions & Update SQL ===
-st.subheader('7. Make Predictions and Update SQL Database')
-if st.button('Make Predictions and Update SQL Database'):
-    best_model = h2o.load_model("models/best_exoplanet_model")
-    predictions_df = best_model.predict(st.session_state.hf).as_data_frame()
-    exo_df_cleaned = st.session_state.exo_df_cleaned.copy()
-    exo_df_cleaned['predicted_habitability'] = predictions_df['predict']
-    exo_df_cleaned.to_sql('exoplanets_with_predictions', con=st.session_state.sql_engine, if_exists='replace', index=False)
+    # 'predict' is the class (0 or 1), 'p1' is the probability of class 1 (habitable)
+    exo_df['predicted_habitability'] = predictions_df['predict']
+    exo_df['probability_habitable'] = predictions_df['p1']  # p1 = probability of class 1
+    exo_df.to_sql('exoplanets_predictions', con=conn, if_exists='replace', index=False)
+    st.success("Predictions saved to database.")
 
-    st.success("Predictions saved to SQL!")
-    st.subheader('Exoplanets with Predictions')
-    st.write(pd.read_sql_table('exoplanets_with_predictions', st.session_state.conn).head())
+    # habitable_planets = exo_df[exo_df['predicted_habitability'] == 1]
+    # st.subheader("Predicted Habitable Planets")
+    # st.write(habitable_planets)
+    # st.write(f"Total predicted habitable planets: {len(habitable_planets)}")
 
-# === 10.0 Query Habitable Planets ===
-st.subheader('8. Query Habitable Planets')
-if st.button('List Habitable Planets'):
-    query = "SELECT * FROM exoplanets_with_predictions WHERE predicted_habitability = 1"
-    results = pd.read_sql_query(query, st.session_state.conn)
-    st.write("Habitable Planets Found:", len(results))
-    st.write(results)
+    st.subheader("🌍 Planets with Highest Predicted Habitability")
+    high_conf_planets = exo_df[exo_df['probability_habitable'] > 0.90]
 
-# === 11.0 Final Cleanup ===
-if st.button('Close Connection and Shutdown H2O'):
-    if st.session_state.conn:
-        st.session_state.conn.close()
+    st.subheader("🌟 Planets with >90% Probability of Being Habitable")
+    st.write(
+        high_conf_planets[['pl_name', 'pl_rade', 'pl_eqt', 'st_teff', 'probability_habitable']]
+        .sort_values(by='probability_habitable', ascending=False)
+        .style.format({'probability_habitable': '{:.2%}'})
+    )
+    st.write(f"Total planets with >90% habitability probability: {len(high_conf_planets)}")
+    # Show cases where model disagrees with label
+    false_positives = exo_df[
+        (exo_df['habitable'] == 0) & 
+        (exo_df['predicted_habitability'] == 1)
+    ]
+
+    st.subheader("🔍 Model-Discovered Habitable Planets (False Positives)")
+    st.write(
+    false_positives[['pl_name', 'pl_rade', 'pl_eqt', 'st_teff', 'probability_habitable']]
+    .sort_values(by='probability_habitable', ascending=False)
+    )
+    st.write(f"Total predicted habitable planets with rule-based label = 0: {len(false_positives)}")
+
+    st.download_button(
+    label="📥 Download Predictions CSV",
+    data=exo_df.to_csv(index=False).encode('utf-8'),
+    file_name='exo_predictions.csv',
+    mime='text/csv'
+    )
+
     h2o.shutdown(prompt=False)
-    st.subheader('9. Summary and Clean Up')
-    st.write("This app has demonstrated cleaning, ML modeling, prediction, and explanation for NASA's Exoplanets dataset using H2O AutoML.")
+    conn.close()
