@@ -2,3 +2,5 @@ venv/
 .env
 credentials.yml
 *.key
+
+.streamlit/secrets.toml
