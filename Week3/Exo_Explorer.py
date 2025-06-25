@@ -175,13 +175,17 @@ if st.button("Start Training"):
     automl.train(x=predictors, y=response, training_frame=hf)
     lb = automl.leaderboard
     st.write("AutoML Leaderboard", lb.as_data_frame())
+    if lb.nrows == 0:
+        st.error("AutoML did not train any models. Please check your data.")
+        return  
 
     best_model = automl.leader
-    st.success("Model trained and leaderboard displayed.")
-
-    model_path = h2o.save_model(best_model, path="models", force=True)
-    st.write(f"Best model saved to: {model_path}")
-
+    if best_model is not None and hassattr(best_model, 'model_id'):
+        model_path = h2o.save_model(best_model, path="models", force=True)
+        st.write(f"Best model saved to: {model_path}")
+    else: 
+        st.error("No valid model found. Please check the training process.")
+    
     predictions_df = best_model.predict(hf).as_data_frame()
 
     # 'predict' is the class (0 or 1), 'p1' is the probability of class 1 (habitable)
