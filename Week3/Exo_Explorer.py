@@ -87,6 +87,25 @@ data_cleaning_agent = make_data_cleaning_agent(llm)
 #         exo_df = pd.DataFrame.from_dict(cleaned_response['data_cleaned'])
 #         st.success("Data cleaned successfully!")
 
+# if st.button("Run Data Cleaning"):
+#     with st.spinner("Cleaning the dataset..."):
+#         cleaned_response = data_cleaning_agent.invoke({
+#             "user_instructions":"""
+#                 Identify and condense duplicate records based on all columns. 
+#                 For numeric fields, compute the average. For categorical fields, use the most frequent value.
+#                 If a value remains missing after aggregation, keep it as NaN.
+#                 Do not drop duplicates blindly—combine them meaningfully.
+#                 Also perform your usual cleaning steps except outlier removal.
+#             """,
+#             "data_raw":exo_df.to_dict(),
+#             "max_retries":3,
+#             "retry_count":0
+#         })
+#         exo_df = pd.DataFrame.from_dict(cleaned_response['data_cleaned'])
+#         st.success("Data cleaned successfully!")
+
+        
+
 # === Drop unnecessary columns ===
 drop_cols = [
     'hostname', 'pl_refname', 'st_refname', 'sy_refname', 'pl_bmassprov',
@@ -103,18 +122,19 @@ exo_df = exo_df.drop(columns=[col for col in drop_cols if col in exo_df.columns]
 def label_habitable(row):
     try:
         return int(
-            (row.get('pl_rade', 99) <= 5) and
-            (150 <= row.get('pl_eqt', -1) <= 500) and
-            (3500 <= row.get('st_teff', -1) <= 8000)
+            (row.get('pl_rade', 99) <= 5) and                            # Earth-sized
+            (0.38 <= row.get('pl_orbsmax', -1) <= 2.0) and               # Orbital distance in AU
+            (row.get('pl_insol', -1) >= 0.25 and row.get('pl_insol') <= 2.0) and  # Stellar flux (Earth flux)
+            (3500 <= row.get('st_teff', -1) <= 8000)                     # Star temperature
         )
     except:
         return 0
-
 exo_df['habitable'] = exo_df.apply(label_habitable, axis=1)
 
 # === Check label distribution ===
 label_counts = Counter(exo_df['habitable'])
 st.write("Label distribution:", label_counts)
+st.markdown("The 'habitable' column indicates whether a planet is potentially habitable (1) or not (0).")
 
 if len(label_counts) < 2:
     st.warning("Only one class found in 'habitable'. Forcing one example to be habitable.")
@@ -177,7 +197,7 @@ if st.button("Start Training"):
 
     st.subheader("🌟 Planets with >90% Probability of Being Habitable")
     st.write(
-        high_conf_planets[['pl_name', 'pl_rade', 'pl_eqt', 'st_teff', 'probability_habitable']]
+        high_conf_planets
         .sort_values(by='probability_habitable', ascending=False)
         .style.format({'probability_habitable': '{:.2%}'})
     )
@@ -190,8 +210,9 @@ if st.button("Start Training"):
 
     st.subheader("🔍 Model-Discovered Habitable Planets (False Positives)")
     st.write(
-    false_positives[['pl_name', 'pl_rade', 'pl_eqt', 'st_teff', 'probability_habitable']]
+    false_positives
     .sort_values(by='probability_habitable', ascending=False)
+    .style.format({'probability_habitable': '{:.2%}'})
     )
     st.write(f"Total predicted habitable planets with rule-based label = 0: {len(false_positives)}")
 
