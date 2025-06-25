@@ -167,7 +167,7 @@ if st.button("Start Training"):
     response = "habitable"
 
     automl = H2OAutoML(
-        max_runtime_secs=20,
+        max_runtime_secs=120,
         max_models=5,
         seed=42,
         balance_classes=True
@@ -178,7 +178,7 @@ if st.button("Start Training"):
     st.write("AutoML Leaderboard", lb.as_data_frame())
 
     best_model = automl.leader
-    
+
     if best_model is not None and hassattr(best_model, 'model_id'):
         model_path = h2o.save_model(best_model, path="Week3/models", force=True)
         st.write(f"Best model saved to: {model_path}")
