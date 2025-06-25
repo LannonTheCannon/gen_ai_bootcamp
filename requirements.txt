@@ -17,3 +17,12 @@ tqdm==4.67.1
 typing-inspection==0.4.1
 typing_extensions==4.14.0
 langgraph
+langgraph-core==0.1.0
+langgraph-openai==0.1.0
+langgraph-llama-index==0.1.0
+langgraph-llama-index-openai==0.1.0
+langgraph-llama-index-pinecone==0.1.0
+langgraph-llama-index-qdrant==0.1.0
+langgraph-llama-index-weaviate==0.1.0
+langgraph-llama-index-milvus==0.1.0
+langgraph-llama-index-chroma==0.1.0         
