@@ -141,6 +141,9 @@ if len(label_counts) < 2:
     exo_df.loc[0, 'habitable'] = 1
 
 # === Save to SQL ===
+
+os.makedirs("database", exist_ok=True)
+
 engine = sql.create_engine("sqlite:///database/exoplanets_v4.db")
 conn = engine.connect()
 exo_df.to_sql('exoplanets', con=engine, if_exists='replace', index=False)
