@@ -1,2 +1,10 @@
 langgraph
 sqlalchemy==2.0.21
+streamlit
+pandas
+sqlalchemy
+h2o
+openai
+langchain
+langgraph
+python-dotenv
