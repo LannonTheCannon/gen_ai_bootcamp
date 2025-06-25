@@ -9,3 +9,6 @@ langchain
 langgraph
 python-dotenv
 Ipython
+langchain
+langchain-openai
+langchain-community
