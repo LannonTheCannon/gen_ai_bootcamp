@@ -177,7 +177,6 @@ if st.button("Start Training"):
     st.write("AutoML Leaderboard", lb.as_data_frame())
     if lb.nrows == 0:
         st.error("AutoML did not train any models. Please check your data.")
-        return  
 
     best_model = automl.leader
     if best_model is not None and hassattr(best_model, 'model_id'):
