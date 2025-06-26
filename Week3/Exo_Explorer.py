@@ -180,7 +180,7 @@ if st.button("Start Training"):
     best_model = automl.leader
 
 
-    model_path = h2o.save_model(best_model, path="Week3/models", force=True)
+    model_path = h2o.save_model(best_model, path="models", force=True)
     st.write(f"Best model saved to: {model_path}")
 
     

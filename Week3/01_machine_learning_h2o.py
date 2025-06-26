@@ -47,7 +47,7 @@ metadata.reflect(bind=sql_engine)
 list(metadata.tables.keys())
 
 # Goal: Predictive Lead Scoring (Check whats in the database)
-pd.read_sql_table('leads_scored', conn).glimpse()
+pd.read_sql_table('leads_scored_h2o', conn).glimpse()
 
 
 # 3.0 Prepares Data for Machine Learning  ---------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ response = "purchased"
 automl = H2OAutoML(
     max_models=20, 
     seed=1, 
-    max_runtime_secs=20 # 60 * 10
+    max_runtime_secs=100 # 60 * 10
 )
 
 automl.train(x=predictors, y=response, training_frame=hf)
@@ -116,7 +116,7 @@ h2o.save_model(
 )
 
 # Load the production model
-best_model_h2o = h2o.load_model("models/best_model_h2o_XGBoost_1_AutoML_2_20250620_111813")
+best_model_h2o = h2o.load_model("models/best_model_h2o_XGBoost_3_AutoML_1_20250623_121353")
 
 # 8.0 Make Predictions and Explain the Model ---------------------------------------------------------------------------------
 # Explain

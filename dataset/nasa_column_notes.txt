@@ -93,4 +93,75 @@
 # COLUMN rowupdate:      Date of Last Update
 # COLUMN pl_pubdate:     Planetary Parameter Reference Publication Date
 # COLUMN releasedate:    Release Date
-#
+
+
+Thank you for sharing the official NASA column notes! Here’s a concise summary of the **most relevant columns for exoplanet habitability prediction** and what they mean:
+
+---
+
+### **Key Columns for Habitability**
+
+- **pl_orbsmax**: Orbit Semi-Major Axis [au]  
+  *The average distance from the planet to its star, in astronomical units (AU). Used to estimate if the planet is in the habitable zone.*
+
+- **pl_rade**: Planet Radius [Earth Radius]  
+  *The size of the planet in Earth radii. Used to distinguish rocky (terrestrial) planets from gas giants.*
+
+- **pl_bmasse**: Planet Mass or Mass*sin(i) [Earth Mass]  
+  *The mass of the planet in Earth masses. Useful for further distinguishing planet types.*
+
+- **pl_eqt**: Equilibrium Temperature [K]  
+  *Estimated temperature of the planet, assuming no atmosphere. Can be used as an additional habitability filter.*
+
+- **pl_insol**: Insolation Flux [Earth Flux]  
+  *The amount of stellar energy the planet receives, compared to Earth. Another way to estimate the habitable zone.*
+
+- **st_teff**: Stellar Effective Temperature [K]  
+  *Temperature of the host star, which affects the location of the habitable zone.*
+
+- **st_rad**: Stellar Radius [Solar Radius]  
+  *Size of the host star, also relevant for habitability calculations.*
+
+- **sy_dist**: Distance [pc]  
+  *Distance to the planetary system in parsecs. Not directly related to habitability, but useful for observation planning.*
+
+---
+
+### **Columns to Drop for ML Prediction**
+
+- **Identifiers & References:**  
+  `pl_name`, `hostname`, `pl_refname`, `st_refname`, `sy_refname`, `pl_bmassprov`, etc.
+
+- **Discovery/Publication Info:**  
+  `discoverymethod`, `disc_year`, `disc_facility`, `rowupdate`, `pl_pubdate`, `releasedate`
+
+- **Flags & Metadata:**  
+  `default_flag`, `pl_controv_flag`, `pl_orbperlim`, `pl_orbsmaxlim`, `pl_radelim`, `pl_radjlim`, `pl_bmasselim`, `pl_bmassjlim`, `pl_orbeccenlim`, `pl_insollim`, `pl_eqtlim`, `ttv_flag`, etc.
+
+- **Uncertainty Columns:**  
+  Any column ending in `err1`, `err2`, or `lim` (these are error bars or limit flags).
+
+- **Coordinates:**  
+  `rastr`, `ra`, `decstr`, `dec`
+
+---
+
+### **How to Use for Habitability**
+
+- **Habitable Zone:** Use `pl_orbsmax` (or `pl_insol`) to select planets at a distance from their star where liquid water could exist.
+- **Terrestrial Planets:** Use `pl_rade` (and/or `pl_bmasse`) to select planets similar in size/mass to Earth.
+- **Additional Filters:** Optionally use `pl_eqt` (temperature) or `pl_insol` (insolation) for more refined selection.
+
+---
+
+**Example:**
+```python
+exo_df['habitable'] = (
+    (exo_df['pl_orbsmax'] > 0.5) & (exo_df['pl_orbsmax'] < 2.0) &  # Habitable zone (AU)
+    (exo_df['pl_rade'] > 0.5) & (exo_df['pl_rade'] < 2.5)          # Earth-like size
+).astype(int)
+```
+
+---
+
+If you want a description for any other specific column, just ask!
