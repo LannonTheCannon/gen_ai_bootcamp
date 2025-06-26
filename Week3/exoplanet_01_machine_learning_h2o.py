@@ -136,9 +136,9 @@ best_model_h2o = h2o.load_model("models/exoplanet_habitable_model_StackedEnsembl
 
 # 7.0 Explain the Model ---------------------------------------------------------------------------------
 hf_explain = hf.drop('pl_name')
-best_model_h2o.explain(hf_explain)
+best_model_h2o.explain(hf)
 # 8.0 Make Predictions and Update the SQL Database ---------------------------------------------------------------------------------
-predictions_df = best_model_h2o.predict(hf_explain).as_data_frame()
+predictions_df = best_model_h2o.predict(hf).as_data_frame()
 
 # Combine original features and predictions
 full_pred_df = pd.concat([exo_df, predictions_df], axis=1)

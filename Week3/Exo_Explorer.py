@@ -179,11 +179,10 @@ if st.button("Start Training"):
 
     best_model = automl.leader
 
-    if best_model is not None and hassattr(best_model, 'model_id'):
-        model_path = h2o.save_model(best_model, path="Week3/models", force=True)
-        st.write(f"Best model saved to: {model_path}")
-    else: 
-        st.error("No valid model found. Please check the training process.")
+
+    model_path = h2o.save_model(best_model, path="models", force=True)
+    st.write(f"Best model saved to: {model_path}")
+
     
     predictions_df = best_model.predict(hf).as_data_frame()
 
