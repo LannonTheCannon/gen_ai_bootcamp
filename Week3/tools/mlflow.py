@@ -3,6 +3,7 @@
 from typing import Optional, Dict, Any, Union, List, Annotated
 from langgraph.prebuilt import InjectedState
 from langchain.tools import tool
+from security import safe_command
 
 
 @tool(response_format='content_and_artifact')
@@ -263,7 +264,7 @@ def mlflow_launch_ui(
     if tracking_uri:
         cmd.extend(["--backend-store-uri", tracking_uri])
     
-    process = subprocess.Popen(cmd)
+    process = safe_command.run(subprocess.Popen, cmd)
     return (f"MLflow UI launched at http://{host}:{allocated_port}. "
             f"(PID: {process.pid})")
 
